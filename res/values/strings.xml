@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources><string name="app_name">TorP2PSend Receiver</string>
+    
+<string name="working_directory">workdir</string>
+<string name="control_port">controlport</string>
+<string name="socks_port">socksport</string>
+<string name="local_port">localport</string>
+<string name="hiddenservice_directory">hsdir</string>
+<string name="message_id">msgid</string>
+<string name="message_counter">counter</string>
+
+</resources>
