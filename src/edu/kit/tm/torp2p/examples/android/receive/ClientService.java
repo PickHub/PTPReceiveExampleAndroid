@@ -1,4 +1,4 @@
-package edu.kit.tm.android.torp2psend;
+package edu.kit.tm.torp2p.examples.android.receive;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -11,9 +11,8 @@ import java.util.HashSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import edu.kit.tm.android.torp2psend.R;
+import edu.kit.tm.torp2p.examples.android.receive.R;
 
-import edu.kit.tm.torp2p.Identifier;
 import edu.kit.tm.torp2p.ReceiveListenerAdapter;
 import edu.kit.tm.torp2p.TorP2P;
 import edu.kit.tm.torp2p.utility.Constants;

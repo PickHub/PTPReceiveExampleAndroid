@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources><string name="app_name">TorP2PSend Receiver</string>
+<resources><string name="app_name">TorP2P Receive Example</string>
     
 <string name="working_directory">workdir</string>
 <string name="control_port">controlport</string>

@@ -1,8 +1,8 @@
-package edu.kit.tm.android.torp2psend;
+package edu.kit.tm.torp2p.examples.android.receive;
 
 import java.lang.ref.WeakReference;
 
-import edu.kit.tm.android.torp2psend.R;
+import edu.kit.tm.torp2p.examples.android.receive.R;
 
 import android.app.Activity;
 import android.content.ComponentName;

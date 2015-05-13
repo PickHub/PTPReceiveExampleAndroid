@@ -1,4 +1,4 @@
-package edu.kit.tm.android.torp2psend;
+package edu.kit.tm.torp2p.examples.android.receive;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,7 +12,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipInputStream;
 
-import edu.kit.tm.android.torp2psend.R;
+import edu.kit.tm.torp2p.examples.android.receive.R;
 
 import edu.kit.tm.torp2p.utility.Constants;
 import net.freehaven.tor.control.TorControlConnection;
