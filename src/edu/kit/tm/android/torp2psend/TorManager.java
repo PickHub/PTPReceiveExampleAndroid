@@ -3,12 +3,14 @@ package edu.kit.tm.android.torp2psend;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeoutException;
+import java.util.zip.ZipInputStream;
 
 import edu.kit.tm.android.torp2psend.R;
 
@@ -111,9 +113,9 @@ public class TorManager {
 
 				new File(workingDirectory).mkdirs();
 				new File(workingDirectory + "/config/").mkdir();
-				Utility.copy(context, torFile, R.raw.tor, true);
-				Utility.copy(context, torrcFile, R.raw.torrc, false);
-				Utility.copy(context, configFile, R.raw.p2p, false);
+				copy(context, torFile, R.raw.tor, true);
+				copy(context, torrcFile, R.raw.torrc, false);
+				copy(context, configFile, R.raw.p2p, false);
 				new File(torFile).setExecutable(true);
 
 				/** The parameters for the Tor execution command. */
@@ -278,5 +280,28 @@ public class TorManager {
 		int end = line.indexOf(" ", start);
 		return Integer.valueOf(line.substring(start, end));
 	}
+	
+	private static void copy(Context context, String location, int resource, boolean zip) throws IOException {
+		File destination = new File(location);
+		if (destination.exists()) return;
 
+		InputStream in = context.getResources().openRawResource(resource);
+		FileOutputStream out = new FileOutputStream(destination);
+		ZipInputStream zis = null;
+
+		if (zip) {
+			zis = new ZipInputStream(in);
+			zis.getNextEntry();
+			in = zis;
+		}
+
+		byte[] buffer = new byte[4096];
+		int bytecount;
+		while ((bytecount = in.read(buffer)) > 0)
+			out.write(buffer, 0, bytecount);
+
+		out.close();
+		in.close();
+		if (zip) zis.close();
+	}
 }
