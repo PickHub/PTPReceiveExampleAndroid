@@ -20,15 +20,20 @@ import net.freehaven.tor.control.TorControlConnection;
 import android.content.Context;
 import android.os.AsyncTask;
 
+/**
+ * Android-specific manager for the Tor process. Might be included into main TorP2P codebase in the future.
+ * 
+ * @author Simeon Andreev
+ * @author Martin Florian
+ *
+ */
 public class TorManager {
-
 
 	public static final long controlPortTimeout = 50 * 1000;
 	public static final long bootstrapTimeout = 90 * 1000;
 	public static final String delimiter = ":";
 	public static final String controlPortFile = "controlport";
 	public static final String workingSubdirectory = "/torp2phome/";
-
 
 	public static interface Listener {
 
@@ -39,20 +44,16 @@ public class TorManager {
 		public void failure(String message);
 	}
 
-
 	private static class Update {
 
 		public final int result;
 		public final String message;
 
-
 		public Update(int result, String message) {
 			this.result = result;
 			this.message = message;
 		}
-
 	}
-
 
 	private static abstract class Task extends AsyncTask<Void, Update, Void> {
 
@@ -68,7 +69,6 @@ public class TorManager {
 			this.listener = listener;
 		}
 
-
 		protected void onProgressUpdate(Update... update) {
 			if (update.length == 0) return;
 			final int l = update.length - 1;
@@ -76,14 +76,11 @@ public class TorManager {
 			else if (update[l].result == UPDATE) listener.update(update[l].message);
 			else if (update[l].result == FAILURE) listener.failure(update[l].message);
 		}
-
 	}
-
 
 	private static class StartTask extends Task {
 
 		public StartTask(Context context, Listener listener) { super(context, listener); }
-
 
 		protected Void doInBackground(Void... params) {
 			final String directory = context.getFilesDir().getPath();
@@ -107,10 +104,8 @@ public class TorManager {
 						publishProgress(new Update(SUCCESS, "Tor already running" + delimiter + controlPort + delimiter + socksPort));
 						return null;
 					} catch (IOException e) {
-
 					}
 				}
-
 				new File(workingDirectory).mkdirs();
 				new File(workingDirectory + "/config/").mkdir();
 				copy(context, torFile, R.raw.tor, true);
@@ -132,7 +127,6 @@ public class TorManager {
 					Constants.ctlportoutoption,//"ControlPortWriteToFile",
 					portFile
 				};
-
 				process = Runtime.getRuntime().exec(parameters);
 				publishProgress(new Update(UPDATE, "Bootstrapping started."));
 
@@ -150,7 +144,6 @@ public class TorManager {
 						// Waiting was interrupted. Do nothing.
 					}
 				}
-
 				if (!controlPortFileExists) throw new TimeoutException("Tor did not create the control port file in the given timeout.");
 
 				controlPort = getControlPort(directory);
@@ -179,7 +172,6 @@ public class TorManager {
 						// Waiting was interrupted. Do nothing.
 					}
 				}
-
 				if (!done) throw new TimeoutException("Tor did not bootstrap in the given timeout.");
 				final int socksPort = parsePort(conn.getInfo("net/listeners/socks").replace("\"", ""));
 
@@ -189,17 +181,13 @@ public class TorManager {
 				new File(portFile).delete();
 				publishProgress(new Update(FAILURE, e.getMessage()));
 			}
-
 			return null;
 		}
-
 	}
-
 
 	private static class StopTask extends Task {
 
 		public StopTask(Context context, Listener listener) { super(context, listener); }
-
 
 		protected Void doInBackground(Void... params) {
 			final String directory = context.getFilesDir().getPath();
@@ -211,12 +199,9 @@ public class TorManager {
 			} catch (Exception e) {
 				publishProgress(new Update(FAILURE, e.getMessage()));
 			}
-
 			return null;
 		}
-
 	}
-
 
 	private static Listener dummy = new Listener() {
 
@@ -228,10 +213,7 @@ public class TorManager {
 
 		@Override
 		public void failure(String message) { }
-
 	};
-
-
 
 	public static void start(Context context, Listener listener) { new StartTask(context, listener).execute(); }
 
@@ -269,9 +251,7 @@ public class TorManager {
 	    return port;
 	}
 
-
 	public static String getWorkingDirectory(String directory) { return directory + workingSubdirectory; }
-
 
 	private static int parsePort(String line) { return Integer.valueOf(line.substring(line.lastIndexOf(":") + 1)); }
 

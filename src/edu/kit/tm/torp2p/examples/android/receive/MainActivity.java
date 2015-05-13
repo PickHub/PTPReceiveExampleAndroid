@@ -18,8 +18,20 @@ import android.os.RemoteException;
 import android.widget.TextView;
 import android.widget.Toast;
 
+/**
+ * Standard Android activity. Displays messages received via the ClientService and TorP2P.
+ * 
+ * @author Simeon Andreev
+ * @author Martin Florian
+ *
+ */
 public class MainActivity extends Activity {
 	
+	/**
+	 * Handler for incoming messages from {@link ClientService}.
+	 * 
+	 * @see ClientService
+	 */	
 	private static class IncomingHandler extends Handler {
 
 		private final WeakReference<MainActivity> activity;
@@ -32,7 +44,10 @@ public class MainActivity extends Activity {
 				Bundle bundle = msg.getData();
 				String message = bundle.getString(ClientService.MESSAGE);
 				String address = bundle.getString(ClientService.ADDRESS);
-				activity.get().receive(message, address);
+				activity.get().showMessage(message, address);
+			} else if (msg.what == ClientService.MSG_IDENTIFIER) {
+				Bundle bundle = msg.getData();
+				activity.get().showOwnIdentifier(bundle.getString(ClientService.ADDRESS));
 			} else {
 				super.handleMessage(msg);
 			}
@@ -73,9 +88,6 @@ public class MainActivity extends Activity {
 		
 		chatBox = (TextView)findViewById(R.id.chatbox);
 
-		chatBox.append("Own Address: TODO");
-		chatBox.append("\n");
-		
 		if (ClientService.isRunning()) bindService();
 		else startClient();
 	}
@@ -104,10 +116,15 @@ public class MainActivity extends Activity {
 		stopService(new Intent(MainActivity.this, ClientService.class));
 	}
 
-	private void receive(String message, String address) {
+	private void showMessage(String message, String address) {
 
 		chatBox.append(address + ": ");
 		chatBox.append(message);
+		chatBox.append("\n");
+	}
+	
+	public void showOwnIdentifier(String address) {
+		chatBox.append("Own Address: " + address);
 		chatBox.append("\n");
 	}
 
@@ -116,8 +133,8 @@ public class MainActivity extends Activity {
 		bound = true;
 		Toast.makeText(this, "Connecting to service.", Toast.LENGTH_SHORT).show();
 	}
-
-	 private void unbindService() {
+	
+	private void unbindService() {
 		if (!bound) return;
 
 		// If we have received the service, and hence registered with it, then now is the time to unregister.
@@ -131,7 +148,6 @@ public class MainActivity extends Activity {
 
 			}
 		}
-
 		// Detach our existing connection.
 		unbindService(mConnection);
 		bound = false;

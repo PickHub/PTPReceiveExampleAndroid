@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import edu.kit.tm.torp2p.examples.android.receive.R;
 
+import edu.kit.tm.torp2p.Identifier;
 import edu.kit.tm.torp2p.ReceiveListenerAdapter;
 import edu.kit.tm.torp2p.TorP2P;
 import edu.kit.tm.torp2p.utility.Constants;
@@ -39,8 +40,15 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
-
-/* source : http://stackoverflow.com/questions/4300291/example-communication-between-activity-and-service-using-messaging */
+/**
+ * Service for running TorP2P. Communicates with MainActivity.java
+ * 
+ * @see http://stackoverflow.com/questions/4300291/example-communication-between-activity-and-service-using-messaging
+ *
+ * @author Simeon Andreev
+ * @author Martin Florian
+ *
+ */
 public class ClientService extends Service {
 
 	public static final String serviceHSDirectory = "TheHiddenService";
@@ -49,6 +57,7 @@ public class ClientService extends Service {
 	public static final String ADDRESS = "address";
 	public static final String ID = "id";
 
+	// Message format definitions
 	public static final int MSG_REGISTER_CLIENT = 1;
 	public static final int MSG_UNREGISTER_CLIENT = 2;
 	public static final int MSG_SEND_MESSAGE = 3;
@@ -111,20 +120,6 @@ public class ClientService extends Service {
 			if (msg.what == MSG_REGISTER_CLIENT) {
 				
 				try {
-					// Notify client of onion address.
-					Bundle bundle = new Bundle();
-					// FIXME
-					//Identifier identifier = service.get().torp2p.getIdentifier();
-					//bundle.putString(ADDRESS, identifier.getTorAddress());
-					bundle.putString(ADDRESS, "TODO");
-					Message message = Message.obtain(null, MSG_IDENTIFIER);
-					message.setData(bundle);
-					msg.replyTo.send(message);
-				} catch (RemoteException e) {
-					return;
-				}
-				
-				try {
 					// Notify client of missed messages.
 					while (!service.get().receivedQueue.isEmpty()) {
 						Tuple element = service.get().receivedQueue.peek();
@@ -139,7 +134,6 @@ public class ClientService extends Service {
 				} catch (RemoteException e) {
 					return;
 				}
-
 				service.get().client = msg.replyTo;
 
 			} else if (msg.what == MSG_UNREGISTER_CLIENT) {
@@ -216,18 +210,28 @@ public class ClientService extends Service {
 						client = null;
 					}
 				}
-
 			});
-
 			if (torrunning) {
 				new Thread(new Runnable() {
 
 					@Override
 					public void run() {
 						try {
-							torp2p.reuseHiddenService(false);
+							torp2p.reuseHiddenService();
 						} catch (IOException e) {
 							throw new RuntimeException(e.getMessage());
+						}
+						try {
+							// Tell client our TorP2P Identifier
+							Identifier identifier = torp2p.getIdentifier();
+							Bundle bundle = new Bundle();
+							bundle.putString(ADDRESS, identifier.getTorAddress());
+							bundle.putString(ADDRESS, "TODO");
+							Message message = Message.obtain(null, MSG_IDENTIFIER);
+							message.setData(bundle);
+							client.send(message);
+						} catch (RemoteException e) {
+							client = null;
 						}
 					}
 
@@ -239,7 +243,6 @@ public class ClientService extends Service {
 				if (activeNetworkInfo != null && activeNetworkInfo.isConnected())
 					rebootTor(this);
 			}
-			
 			editor = preferences.edit();
 			editor.putInt(getResources().getString(R.string.local_port), torp2p.getLocalPort());
 			editor.commit();
@@ -249,7 +252,6 @@ public class ClientService extends Service {
 		}
 	}
 
-	
 	private void startInNotificationArea() {
 		Intent notificationIntent = new Intent(this, MainActivity.class);
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -260,7 +262,7 @@ public class ClientService extends Service {
 			.build();
 		startForeground(42, notification);
 	}
-
+	
 	@Override
 	public IBinder onBind(Intent intent) { return messenger.getBinder(); }
 
@@ -386,7 +388,6 @@ public class ClientService extends Service {
 
 			@Override
 			public void failure(String message) { Toast.makeText(ClientService.this, message, Toast.LENGTH_SHORT).show(); }
-
 		});
 	}
 	
@@ -428,7 +429,6 @@ public class ClientService extends Service {
 							throw new RuntimeException(e.getMessage());
 						}
 					}
-
 				}).start();
 			}
 
@@ -437,8 +437,6 @@ public class ClientService extends Service {
 
 			@Override
 			public void failure(String message) { throw new RuntimeException(message); }
-
 		});
 	}
-
 }
