@@ -24,7 +24,6 @@ import android.os.AsyncTask;
  * Android-specific manager for the Tor process. Might be included into main TorP2P codebase in the future.
  * 
  * @author Simeon Andreev
- * @author Martin Florian
  *
  */
 public class TorManager {
@@ -115,7 +114,7 @@ public class TorManager {
 				new File(torFile).setExecutable(true);
 
 				/** The parameters for the Tor execution command. */
-				final String[] parameters = {
+				final String[] cmd = {
 					/** The Tor executable file to run. */
 					torFile,
 					/** Tell Tor which torrc file to use. */
@@ -128,7 +127,7 @@ public class TorManager {
 					Constants.ctlportoutoption,//"ControlPortWriteToFile",
 					portFile
 				};
-				torProcess = Runtime.getRuntime().exec(parameters);
+				torProcess = Runtime.getRuntime().exec(cmd);
 				publishProgress(new Update(UPDATE, "Bootstrapping started."));
 
 				// Wait until the control port file is written.
@@ -201,8 +200,8 @@ public class TorManager {
 				publishProgress(new Update(FAILURE, e.getMessage()));
 				if (torProcess != null) torProcess.destroy();
 			}
-			// Just to be sure: kill the process after 10 seconds
-			try { Thread.sleep(10*1000); } catch (InterruptedException e) {	}
+			// Just to be sure: kill the process after 2 seconds
+			try { Thread.sleep(2000); } catch (InterruptedException e) {	}
 			torProcess.destroy();
 
 			return null;
