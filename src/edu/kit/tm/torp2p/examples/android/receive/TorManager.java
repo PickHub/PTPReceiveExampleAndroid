@@ -97,7 +97,7 @@ public class TorManager {
 				if (controlPort != -1) {
 					try {
 						Socket s = new Socket(Constants.localhost, controlPort);
-						TorControlConnection conn = TorControlConnection.getConnection(s);
+						TorControlConnection conn = new TorControlConnection(s);
 						conn.authenticate(new byte[0]);
 						final int socksPort = parsePort(conn.getInfo("net/listeners/socks").replace("\"", ""));
 						// If so, do not start it again.
@@ -150,7 +150,7 @@ public class TorManager {
 				if (controlPort == -1) throw new TimeoutException("Could not read the control port output file.");
 
 				Socket socket = new Socket(Constants.localhost, controlPort);
-				TorControlConnection conn = TorControlConnection.getConnection(socket);
+				TorControlConnection conn = new TorControlConnection(socket);
 				conn.authenticate(new byte[0]);
 				int percent = 0;
 
@@ -230,7 +230,7 @@ public class TorManager {
 
 	public static void shutdown(int controlPort) throws UnknownHostException, IOException {
 		Socket s = new Socket(Constants.localhost, controlPort);
-		TorControlConnection conn = TorControlConnection.getConnection(s);
+		TorControlConnection conn = new TorControlConnection(s);
 		conn.authenticate(new byte[0]);
 		conn.shutdownTor(Constants.shutdownsignal);
 	}
