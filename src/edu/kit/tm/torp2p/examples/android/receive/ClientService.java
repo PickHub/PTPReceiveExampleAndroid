@@ -51,13 +51,15 @@ import android.widget.Toast;
  */
 public class ClientService extends Service {
 
+	// Where hidden services data will be stored
 	public static final String serviceHSDirectory = "TheHiddenService";
 
+	// Strings for formatting app-internal messages
 	public static final String MESSAGE = "message";
 	public static final String ADDRESS = "address";
 	public static final String ID = "id";
 
-	// Message format definitions
+	// Message types for app-internal messages
 	public static final int MSG_REGISTER_CLIENT = 1;
 	public static final int MSG_UNREGISTER_CLIENT = 2;
 	public static final int MSG_SEND_MESSAGE = 3;
@@ -65,26 +67,13 @@ public class ClientService extends Service {
 	public static final int MSG_IDENTIFIER = 5;
 	public static final int MSG_MESSAGE_STATUS = 6;
 
+	// Where received messages (from torp2p) will be cached
 	private static final String RECEIVEDFILE = "received";
-
-	private static class Tuple {
-
-		public final String address;
-		public final String message;
-		public long id;
-
-
-		public Tuple(String address, String message, long id) {
-			this.address = address;
-			this.message = message;
-			this.id = id;
-		}
-
-	}
 
 	private static boolean running = false;
 	public static boolean torrunning = false;
 
+	// React to connectivity changes
 	private final BroadcastReceiver receiver = new BroadcastReceiver() {
 
 		@Override
@@ -102,13 +91,17 @@ public class ClientService extends Service {
 				} else if (connected) {
 					if (torrunning) return;
 
-					//rebootTor(context);
+					rebootTor(context);
 				}
 			}
 		}
-
 	};
 
+	/**
+	 * Handler for incoming messages from {@link MainActivity}.
+	 * 
+	 * @see MainActivity
+	 */	
 	private static class IncomingHandler extends Handler {
 
 		private final WeakReference<ClientService> service;
@@ -122,11 +115,11 @@ public class ClientService extends Service {
 				try {
 					// Notify client of missed messages.
 					while (!service.get().receivedQueue.isEmpty()) {
-						Tuple element = service.get().receivedQueue.peek();
+						edu.kit.tm.torp2p.Message element = service.get().receivedQueue.peek();
 						Bundle bundle = new Bundle();
-						bundle.putString(MESSAGE, element.message);
-						bundle.putString(ADDRESS, element.address);
-						Message message = Message.obtain(null, MSG_RECEIVE_MESSAGE);
+						bundle.putString(MESSAGE, element.content);
+						bundle.putString(ADDRESS, element.identifier.toString());
+						android.os.Message message = android.os.Message.obtain(null, MSG_RECEIVE_MESSAGE);
 						message.setData(bundle);
 						msg.replyTo.send(message);
 						service.get().receivedQueue.remove();
@@ -145,7 +138,7 @@ public class ClientService extends Service {
 	}
 
 	private final Messenger messenger = new Messenger(new IncomingHandler(new WeakReference<ClientService>(this)));
-	private ConcurrentLinkedQueue<Tuple> receivedQueue = new ConcurrentLinkedQueue<Tuple>();
+	private ConcurrentLinkedQueue<edu.kit.tm.torp2p.Message> receivedQueue = new ConcurrentLinkedQueue<edu.kit.tm.torp2p.Message>();
 	private TorP2P torp2p = null;
 	private Messenger client = null;
 
@@ -154,6 +147,7 @@ public class ClientService extends Service {
 		super.onCreate();
 		running = true;
 
+		// Setup detection of connectivity changes
 		final IntentFilter filters = new IntentFilter();
 		filters.addAction("android.net.wifi.WIFI_STATE_CHANGED");
 		filters.addAction("android.net.wifi.STATE_CHANGE");
@@ -166,25 +160,29 @@ public class ClientService extends Service {
 		
 		startInNotificationArea();
 		
-		startTor(); // runs startTorP2P() on completion
+		startTor();	// runs startTorP2P() on completion
 		
-		return START_STICKY;
+		return START_STICKY; // tell Android to restart this services should it be killed
 	}
 	
+	/**
+	 * Starts TorP2P thread. Called from {@link ClientService.startTor}
+	 * 
+	 * @param workingDirectory
+	 * @param controlPort
+	 * @param socksPort
+	 * @param localPort
+	 */
 	private void startTorP2P(String workingDirectory, int controlPort, int socksPort, int localPort) {
+
+		// save working directory
 		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-
-		// FIXME: must this be put?
 		Editor editor = preferences.edit();
-
 		editor.putString(getResources().getString(R.string.working_directory), workingDirectory);
-		editor.putInt(getResources().getString(R.string.control_port), controlPort);
-		editor.putInt(getResources().getString(R.string.socks_port), socksPort);
-		editor.putInt(getResources().getString(R.string.local_port), localPort);
-		editor.putLong(getResources().getString(R.string.message_id), 0);
 		editor.commit();
-
-		client = null;
+		
+		// FIXME: delete if really not needed
+		//client = null;
 
 		receivedQueue = new ConcurrentLinkedQueue<>(readElements(workingDirectory, RECEIVEDFILE));
 
@@ -195,15 +193,14 @@ public class ClientService extends Service {
 				@Override
 				public void receivedMessage(edu.kit.tm.torp2p.Message message) {
 					if (client == null) {
-						receivedQueue.add(new Tuple(message.identifier.getTorAddress(), message.content, 0));
+						receivedQueue.add(message);
 						return;
 					}
-
 					try {
 						Bundle b = new Bundle();
 						b.putString(MESSAGE, message.content);
 						b.putString(ADDRESS, message.identifier.getTorAddress());
-						Message msg = Message.obtain(null, MSG_RECEIVE_MESSAGE);
+						android.os.Message msg = android.os.Message.obtain(null, MSG_RECEIVE_MESSAGE);
 						msg.setData(b);
 						client.send(msg);
 					} catch (RemoteException e) {
@@ -227,14 +224,13 @@ public class ClientService extends Service {
 							Bundle bundle = new Bundle();
 							bundle.putString(ADDRESS, identifier.getTorAddress());
 							bundle.putString(ADDRESS, "TODO");
-							Message message = Message.obtain(null, MSG_IDENTIFIER);
+							android.os.Message message = android.os.Message.obtain(null, MSG_IDENTIFIER);
 							message.setData(bundle);
 							client.send(message);
 						} catch (RemoteException e) {
 							client = null;
 						}
 					}
-
 				}).start();
 			} else {
 				ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -243,15 +239,14 @@ public class ClientService extends Service {
 				if (activeNetworkInfo != null && activeNetworkInfo.isConnected())
 					rebootTor(this);
 			}
-			editor = preferences.edit();
-			editor.putInt(getResources().getString(R.string.local_port), torp2p.getLocalPort());
-			editor.commit();
-
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage());
 		}
 	}
 
+	/**
+	 * Makes service visible in notification area. In this way, it won't be killed so quickly by the OS.
+	 */
 	private void startInNotificationArea() {
 		Intent notificationIntent = new Intent(this, MainActivity.class);
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -284,7 +279,7 @@ public class ClientService extends Service {
 
 	public static boolean isRunning() { return running; }
 
-	private void writeQueue(ConcurrentLinkedQueue<Tuple> queue, HashSet<Long> banned, String workingDirectory, String fileName) {
+	private void writeQueue(ConcurrentLinkedQueue<edu.kit.tm.torp2p.Message> queue, HashSet<Long> banned, String workingDirectory, String fileName) {
 		BufferedWriter buffer = null;
 
 		try {
@@ -294,8 +289,8 @@ public class ClientService extends Service {
 
 			while (!queue.isEmpty()) {
 				if (!banned.contains(queue.peek().id)) {
-					buffer.write(queue.peek().address + "\n");
-					buffer.write(queue.peek().message + "\n");
+					buffer.write(queue.peek().identifier.toString() + "\n");
+					buffer.write(queue.peek().content + "\n");
 					buffer.write(String.valueOf(queue.peek().id) + "\n");
 				}
 				queue.remove();
@@ -309,9 +304,9 @@ public class ClientService extends Service {
 		}
 	}
 
-	private Vector<Tuple> readElements(String workingDirectory, String fileName) {
+	private Vector<edu.kit.tm.torp2p.Message> readElements(String workingDirectory, String fileName) {
 		BufferedReader buffer = null;
-		Vector<Tuple> elements = new Vector<Tuple>();
+		Vector<edu.kit.tm.torp2p.Message> elements = new Vector<edu.kit.tm.torp2p.Message>();
 
 		try {
 			File file = new File(workingDirectory + File.separator + fileName);
@@ -322,9 +317,8 @@ public class ClientService extends Service {
 				String address = buffer.readLine();
 				String message = buffer.readLine();
 				String id = buffer.readLine();
-				elements.add(new Tuple(address, message, Long.valueOf(id)));
+				elements.add(new edu.kit.tm.torp2p.Message(Long.valueOf(id), message, new Identifier(address)));
 			}
-
 			buffer.close();
 			file.delete();
 		} catch (IOException e) {
@@ -332,11 +326,12 @@ public class ClientService extends Service {
 		} finally {
 			if (buffer != null) try { buffer.close(); } catch (IOException e) { }
 		}
-
 		return elements;
 	}
 	
 	private void startTor() {
+		
+		if (torrunning) return;
 		
 		ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
@@ -360,7 +355,16 @@ public class ClientService extends Service {
 				final int controlPort = Integer.valueOf(message.substring(start, middle - 1));
 				final int socksPort = Integer.valueOf(message.substring(middle));
 				
-				startTorP2P(directory, controlPort, socksPort, Constants.anyport);
+				if(torp2p == null) {
+					startTorP2P(directory, controlPort, socksPort, Constants.anyport);	
+				} else { // => this was a reboot
+					torp2p.getConfiguration().setTorConfiguration(directory, controlPort, socksPort);
+					try {
+						torp2p.reuseHiddenService(true);
+					} catch (IOException e) {
+						throw new RuntimeException(e.getMessage());
+					}
+				}
 			}
 
 			@Override
@@ -393,50 +397,5 @@ public class ClientService extends Service {
 	
 	private synchronized void rebootTor(final Context context) {
 		if (torrunning) return;
-
-		TorManager.start(context, new TorManager.Listener() {
-
-			@Override
-			public void success(final String message) {
-				Toast.makeText(ClientService.this, message, Toast.LENGTH_SHORT).show();
-				
-				ClientService.torrunning = true;
-				
-				final int start = message.indexOf(TorManager.delimiter) + 1;
-				final int middle = message.indexOf(TorManager.delimiter, start) + 1;
-				final int controlPort = Integer.valueOf(message.substring(start, middle - 1));
-				final int socksPort = Integer.valueOf(message.substring(middle));
-
-				SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(ClientService.this);
-
-				String workingDirectory = preferences.getString(getResources().getString(R.string.working_directory), null);
-
-				Editor editor = preferences.edit();
-
-				editor.putInt(getResources().getString(R.string.control_port), controlPort);
-				editor.putInt(getResources().getString(R.string.socks_port), socksPort);
-				editor.commit();
-
-				torp2p.getConfiguration().setTorConfiguration(workingDirectory, controlPort, socksPort);
-
-				new Thread(new Runnable() {
-
-					@Override
-					public void run() {
-						try {
-							torp2p.reuseHiddenService(true);
-						} catch (IOException e) {
-							throw new RuntimeException(e.getMessage());
-						}
-					}
-				}).start();
-			}
-
-			@Override
-			public void update(String message) { }
-
-			@Override
-			public void failure(String message) { throw new RuntimeException(message); }
-		});
 	}
 }

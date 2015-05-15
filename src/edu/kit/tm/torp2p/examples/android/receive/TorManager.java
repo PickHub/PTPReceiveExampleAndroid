@@ -274,7 +274,6 @@ public class TorManager {
 			zis.getNextEntry();
 			in = zis;
 		}
-
 		byte[] buffer = new byte[4096];
 		int bytecount;
 		while ((bytecount = in.read(buffer)) > 0)

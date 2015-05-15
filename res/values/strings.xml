@@ -6,7 +6,6 @@
 <string name="socks_port">socksport</string>
 <string name="local_port">localport</string>
 <string name="hiddenservice_directory">hsdir</string>
-<string name="message_id">msgid</string>
 <string name="message_counter">counter</string>
 
 </resources>

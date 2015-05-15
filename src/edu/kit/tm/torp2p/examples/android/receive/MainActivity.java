@@ -116,13 +116,18 @@ public class MainActivity extends Activity {
 		stopService(new Intent(MainActivity.this, ClientService.class));
 	}
 
+	/**
+	 * Prints a message from somebody on the chatBox
+	 */
 	private void showMessage(String message, String address) {
-
 		chatBox.append(address + ": ");
 		chatBox.append(message);
 		chatBox.append("\n");
 	}
 	
+	/**
+	 * Prints own torp2p identifier (passed as argument) on the chatBox
+	 */
 	public void showOwnIdentifier(String address) {
 		chatBox.append("Own Address: " + address);
 		chatBox.append("\n");
