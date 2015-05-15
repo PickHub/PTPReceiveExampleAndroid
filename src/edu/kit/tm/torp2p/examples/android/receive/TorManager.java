@@ -34,6 +34,8 @@ public class TorManager {
 	public static final String delimiter = ":";
 	public static final String controlPortFile = "controlport";
 	public static final String workingSubdirectory = "/torp2phome/";
+	
+	private static Process torProcess = null;
 
 	public static interface Listener {
 
@@ -89,7 +91,6 @@ public class TorManager {
 			final String torrcFile = workingDirectory + "torrc";
 			final String configFile = workingDirectory + "/config/p2p.ini";
 			final String portFile = workingDirectory + controlPortFile;
-			Process process = null;
 
 			try {
 				// Check if Tor is already running.
@@ -127,7 +128,7 @@ public class TorManager {
 					Constants.ctlportoutoption,//"ControlPortWriteToFile",
 					portFile
 				};
-				process = Runtime.getRuntime().exec(parameters);
+				torProcess = Runtime.getRuntime().exec(parameters);
 				publishProgress(new Update(UPDATE, "Bootstrapping started."));
 
 				// Wait until the control port file is written.
@@ -177,7 +178,7 @@ public class TorManager {
 
 				publishProgress(new Update(SUCCESS, "Bootstrapping done" + delimiter + controlPort + delimiter + socksPort));
 			} catch (Exception e) {
-				if (process != null) process.destroy();
+				if (torProcess != null) torProcess.destroy();
 				new File(portFile).delete();
 				publishProgress(new Update(FAILURE, e.getMessage()));
 			}
@@ -198,7 +199,12 @@ public class TorManager {
 			    publishProgress(new Update(SUCCESS, "Signaled Tor to shutdown."));
 			} catch (Exception e) {
 				publishProgress(new Update(FAILURE, e.getMessage()));
+				if (torProcess != null) torProcess.destroy();
 			}
+			// Just to be sure: kill the process after 10 seconds
+			try { Thread.sleep(10*1000); } catch (InterruptedException e) {	}
+			torProcess.destroy();
+
 			return null;
 		}
 	}
