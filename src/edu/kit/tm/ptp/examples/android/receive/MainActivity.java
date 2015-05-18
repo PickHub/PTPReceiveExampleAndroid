@@ -1,8 +1,8 @@
-package edu.kit.tm.torp2p.examples.android.receive;
+package edu.kit.tm.ptp.examples.android.receive;
 
 import java.lang.ref.WeakReference;
 
-import edu.kit.tm.torp2p.examples.android.receive.R;
+import edu.kit.tm.ptp.examples.android.receive.R;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -19,7 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Standard Android activity. Displays messages received via the ClientService and TorP2P.
+ * Standard Android activity. Displays messages received via the ClientService and PTP.
  * 
  * @author Simeon Andreev
  * @author Martin Florian
@@ -126,7 +126,7 @@ public class MainActivity extends Activity {
 	}
 	
 	/**
-	 * Prints own torp2p identifier (passed as argument) on the chatBox
+	 * Prints own ptp identifier (passed as argument) on the chatBox
 	 */
 	public void showOwnIdentifier(String address) {
 		chatBox.append("Own Address: " + address);

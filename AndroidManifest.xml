@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="edu.kit.tm.torp2p.examples.android.receive"
+    package="edu.kit.tm.ptp.examples.android.receive"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -19,7 +19,7 @@
 		android:scrollbars = "vertical" >
         
         <activity
-            android:name="edu.kit.tm.torp2p.examples.android.receive.MainActivity"
+            android:name="edu.kit.tm.ptp.examples.android.receive.MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:screenOrientation="portrait">
@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
 		
-        <service android:name="edu.kit.tm.torp2p.examples.android.receive.ClientService" />
+        <service android:name="edu.kit.tm.ptp.examples.android.receive.ClientService" />
         
     </application>
     

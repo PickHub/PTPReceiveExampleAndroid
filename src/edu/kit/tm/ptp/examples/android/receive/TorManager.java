@@ -1,4 +1,4 @@
-package edu.kit.tm.torp2p.examples.android.receive;
+package edu.kit.tm.ptp.examples.android.receive;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,16 +12,16 @@ import java.net.UnknownHostException;
 import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipInputStream;
 
-import edu.kit.tm.torp2p.examples.android.receive.R;
+import edu.kit.tm.ptp.utility.Constants;
+import edu.kit.tm.ptp.examples.android.receive.R;
 
-import edu.kit.tm.torp2p.utility.Constants;
 import net.freehaven.tor.control.TorControlConnection;
 
 import android.content.Context;
 import android.os.AsyncTask;
 
 /**
- * Android-specific manager for the Tor process. Might be included into main TorP2P codebase in the future.
+ * Android-specific manager for the Tor process. Might be included into main PeerTorPeer codebase in the future.
  * 
  * @author Simeon Andreev
  *
@@ -32,7 +32,7 @@ public class TorManager {
 	public static final long bootstrapTimeout = 90 * 1000;
 	public static final String delimiter = ":";
 	public static final String controlPortFile = "controlport";
-	public static final String workingSubdirectory = "/torp2phome/";
+	public static final String workingSubdirectory = "/ptphome/";
 	
 	private static Process torProcess = null;
 
@@ -88,7 +88,7 @@ public class TorManager {
 			final String workingDirectory = directory + workingSubdirectory;
 			final String torFile = workingDirectory + "tor";
 			final String torrcFile = workingDirectory + "torrc";
-			final String configFile = workingDirectory + "/config/p2p.ini";
+			final String configFile = workingDirectory + "/config/ptp.ini";
 			final String portFile = workingDirectory + controlPortFile;
 
 			try {
@@ -110,7 +110,7 @@ public class TorManager {
 				new File(workingDirectory + "/config/").mkdir();
 				copy(context, torFile, R.raw.tor, true);
 				copy(context, torrcFile, R.raw.torrc, false);
-				copy(context, configFile, R.raw.p2p, false);
+				copy(context, configFile, R.raw.ptp, false);
 				new File(torFile).setExecutable(true);
 
 				/** The parameters for the Tor execution command. */

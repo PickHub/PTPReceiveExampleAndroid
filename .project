@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>TorP2PAndroidReceiveExample</name>
+	<name>PTPAndroidReceiveExample</name>
 	<comment></comment>
 	<projects>
 		<project>torp2p</project>

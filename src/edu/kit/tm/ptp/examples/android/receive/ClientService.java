@@ -1,15 +1,15 @@
-package edu.kit.tm.torp2p.examples.android.receive;
+package edu.kit.tm.ptp.examples.android.receive;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import edu.kit.tm.torp2p.examples.android.receive.R;
+import edu.kit.tm.ptp.Identifier;
+import edu.kit.tm.ptp.ReceiveListenerAdapter;
+import edu.kit.tm.ptp.PTP;
+import edu.kit.tm.ptp.utility.Constants;
+import edu.kit.tm.ptp.examples.android.receive.R;
 
-import edu.kit.tm.torp2p.Identifier;
-import edu.kit.tm.torp2p.ReceiveListenerAdapter;
-import edu.kit.tm.torp2p.TorP2P;
-import edu.kit.tm.torp2p.utility.Constants;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -25,7 +25,7 @@ import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
 /**
- * Service for running TorP2P. Communicates with MainActivity.java
+ * Service for running PTP. Communicates with MainActivity.java
  * 
  * @see http://stackoverflow.com/questions/4300291/example-communication-between-activity-and-service-using-messaging
  *
@@ -71,7 +71,7 @@ public class ClientService extends Service {
 				try {
 					// Notify client of missed messages.
 					while (!service.get().receivedQueue.isEmpty()) {
-						edu.kit.tm.torp2p.Message element = service.get().receivedQueue.peek();
+						edu.kit.tm.ptp.Message element = service.get().receivedQueue.peek();
 						Bundle bundle = new Bundle();
 						bundle.putString(MESSAGE, element.content);
 						bundle.putString(ADDRESS, element.identifier.toString());
@@ -94,8 +94,8 @@ public class ClientService extends Service {
 	}
 
 	private final Messenger messenger = new Messenger(new IncomingHandler(new WeakReference<ClientService>(this)));
-	private ConcurrentLinkedQueue<edu.kit.tm.torp2p.Message> receivedQueue = new ConcurrentLinkedQueue<edu.kit.tm.torp2p.Message>();
-	private TorP2P torp2p = null;
+	private ConcurrentLinkedQueue<edu.kit.tm.ptp.Message> receivedQueue = new ConcurrentLinkedQueue<edu.kit.tm.ptp.Message>();
+	private PTP ptp = null;
 	private Messenger client = null;
 
 	@Override
@@ -109,28 +109,28 @@ public class ClientService extends Service {
 		
 		startInNotificationArea();
 		
-		startTor();	// runs startTorP2P() on completion
+		startTor();	// runs startPTP() on completion
 		
 		return START_STICKY; // tell Android to restart this services should it be killed
 	}
 	
 	/**
-	 * Starts TorP2P thread. Called from {@link #startTor()}.
+	 * Starts PTP thread. Called from {@link #startTor()}.
 	 * 
 	 * @param workingDirectory
 	 * @param controlPort
 	 * @param socksPort
 	 * @param localPort
 	 */
-	private void startTorP2P(String workingDirectory, int controlPort, int socksPort, int localPort) {
+	private void startPTP(String workingDirectory, int controlPort, int socksPort, int localPort) {
 
 		try {
-			torp2p = new TorP2P(workingDirectory, controlPort, socksPort, localPort, serviceHSDirectory);
-			torp2p.setListener(new ReceiveListenerAdapter() {
+			ptp = new PTP(workingDirectory, controlPort, socksPort, localPort, serviceHSDirectory);
+			ptp.setListener(new ReceiveListenerAdapter() {
 
-				// Pass TorP2P messages to MainActivity
+				// Pass PTP messages to MainActivity
 				@Override
-				public void receivedMessage(edu.kit.tm.torp2p.Message message) {
+				public void receivedMessage(edu.kit.tm.ptp.Message message) {
 					if (client == null) {
 						receivedQueue.add(message);
 						return;
@@ -153,13 +153,13 @@ public class ClientService extends Service {
 				public void run() {
 					try {
 						// Set up Hidden Service
-						torp2p.reuseHiddenService();
+						ptp.reuseHiddenService();
 					} catch (IOException e) {
 						throw new RuntimeException(e.getMessage());
 					}
 					try {
-						// Tell client our own TorP2P Identifier
-						Identifier identifier = torp2p.getIdentifier();
+						// Tell client our own PTP Identifier
+						Identifier identifier = ptp.getIdentifier();
 						Bundle bundle = new Bundle();
 						bundle.putString(ADDRESS, identifier.toString());
 						android.os.Message message = android.os.Message.obtain(null, MSG_IDENTIFIER);
@@ -182,7 +182,7 @@ public class ClientService extends Service {
 		Intent notificationIntent = new Intent(this, MainActivity.class);
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 		Notification notification = new NotificationCompat.Builder(this)
-			.setContentTitle("TorP2P Client")
+			.setContentTitle("PTP Client")
 			.setSmallIcon(R.drawable.ic_launcher)
 			.setContentIntent(pendingIntent)
 			.build();
@@ -198,13 +198,13 @@ public class ClientService extends Service {
 		running = false;
 		
 		stopTor();
-		if (torp2p != null) torp2p.exit();
+		if (ptp != null) ptp.exit();
 	}
 
 	public static boolean isRunning() { return running; }
 	
 	/**
-	 * Starts Tor using {@link TorManager}. Runs {@link #startTorP2P(String, int, int, int)} on success.
+	 * Starts Tor using {@link TorManager}. Runs {@link #startPTP(String, int, int, int)} on success.
 	 * 
 	 * In case a different Tor manager should be used (e.g., Orbot) - rewrite this.
 	 */
@@ -225,8 +225,8 @@ public class ClientService extends Service {
 				final int controlPort = Integer.valueOf(message.substring(start, middle - 1));
 				final int socksPort = Integer.valueOf(message.substring(middle));
 				
-				// start TorP2P
-				startTorP2P(directory, controlPort, socksPort, Constants.anyport);	
+				// start PeerTorPeer
+				startPTP(directory, controlPort, socksPort, Constants.anyport);	
 			}
 
 			@Override
